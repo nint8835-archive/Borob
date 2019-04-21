@@ -15,15 +15,19 @@ class MagikPlugin(BorobPlugin):
     """Provides magik-type functionality."""
 
     @commands.command()
-    async def magik(self, ctx: commands.Context, image: str, scale: int = None):
+    async def magik(self, ctx: commands.Context, image: str, scale: float = None, destwidth: int = None, destheight: int = None):
         """Performs a magik destruction on an image."""
         resp = requests.get(image)
         img = Image(file=io.BytesIO(resp.content))
         img.format = image.split("/")[-1].split(".")[-1].lower()
         img.transform(resize='800x800>')
-        img.liquid_rescale(width=int(img.width * 0.5), height=int(img.height * 0.5), delta_x=int(0.5 * scale) if scale else 1, rigidity=0)
-        img.liquid_rescale(width=int(img.width * 1.5), height=int(img.height * 1.5), delta_x=scale if scale else 2, rigidity=0)
+        if not destwidth:
+            destwidth = int(img.width * 0.5)
+        if not destheight:
+            destheight = int(img.height * 0.5)
+        img.liquid_rescale(width=destwidth, height=destheight, delta_x=int(0.5 * scale) if scale else 1, rigidity=0)
         processed = io.BytesIO()
+        img.transform(resize=f'{img.width}x{img.height}')
         img.save(file=processed)
         processed.seek(0)
         await ctx.send(file=File(processed, filename=image.split("/")[-1]))
