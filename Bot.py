@@ -28,7 +28,7 @@ logging.basicConfig(format="{%(asctime)s} (%(name)s) [%(levelname)s]: %(message)
 for logger in IGNORED_LOGGERS:
     logging.getLogger(logger).setLevel(logging.WARNING)
 
-logger = logging.getLogger("Automata")
+logger = logging.getLogger("Borob")
 
 bot = commands.Bot("b!", description="An image manipulation focused discord bot.")
 
