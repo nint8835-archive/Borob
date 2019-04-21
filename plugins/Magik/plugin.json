@@ -1,5 +1,6 @@
 {
     "name": "Magik",
     "main_class": "MagikPlugin",
-    "author": "nint8835"
+    "author": "nint8835",
+    "version": "1.0.0"
 }
