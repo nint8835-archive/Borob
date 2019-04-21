@@ -1,4 +1,7 @@
 import io
+import os
+
+os.environ["MAGICK_HOME"] = "/usr/lib/"
 
 import requests
 from discord import File
