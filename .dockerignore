@@ -1,0 +1,6 @@
+plugins/
+.env
+.env.dist
+.gitignore
+docker-compose.yml
+LICENSE
