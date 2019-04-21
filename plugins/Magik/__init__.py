@@ -25,9 +25,11 @@ class MagikPlugin(BorobPlugin):
             destwidth = int(img.width * 0.5)
         if not destheight:
             destheight = int(img.height * 0.5)
-        img.liquid_rescale(width=destwidth, height=destheight, delta_x=int(0.5 * scale) if scale else 1, rigidity=0)
+        original_width = img.width
+        original_height = img.height
+        img.liquid_rescale(width=destwidth, height=destheight, delta_x=scale if scale else 1, rigidity=0)
         processed = io.BytesIO()
-        img.transform(resize=f'{img.width}x{img.height}')
+        img.transform(resize=f'{original_width}x{original_height}')
         img.save(file=processed)
         processed.seek(0)
         await ctx.send(file=File(processed, filename=image.split("/")[-1]))
