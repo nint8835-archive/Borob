@@ -19,8 +19,10 @@ class MagikPlugin(BorobPlugin):
         """Performs a magik destruction on an image."""
         resp = requests.get(image)
         img = Image(file=io.BytesIO(resp.content))
-        img.format = image.split("/")[-1].split(".")[-1]
+        img.format = image.split("/")[-1].split(".")[-1].lower()
+        img.transform(resize='800x800>')
         img.liquid_rescale(width=int(img.width * 0.5), height=int(img.height * 0.5), delta_x=int(0.5 * scale) if scale else 1, rigidity=0)
+        img.liquid_rescale(width=int(img.width * 1.5), height=int(img.height * 1.5), delta_x=scale if scale else 2, rigidity=0)
         processed = io.BytesIO()
         img.save(file=processed)
         processed.seek(0)
