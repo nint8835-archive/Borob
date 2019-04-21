@@ -118,7 +118,7 @@ async def plugins(ctx: commands.Context):
 
 
 loader = PluginLoader(
-    plugin_paths=("/app/plugins"),
+    plugin_paths=("/app/plugins",),
     plugin_class=BorobPlugin
 )
 loader.load_manifests()
