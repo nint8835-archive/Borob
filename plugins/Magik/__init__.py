@@ -29,7 +29,7 @@ class MagikPlugin(BorobPlugin):
         original_height = img.height
         img.liquid_rescale(width=destwidth, height=destheight, delta_x=scale if scale else 1, rigidity=0)
         processed = io.BytesIO()
-        img.transform(f'{original_width}x{original_height}')
+        img.transform(resize=f'{original_width}x{original_height}!')
         img.save(file=processed)
         processed.seek(0)
         await ctx.send(file=File(processed, filename=image.split("/")[-1]))
