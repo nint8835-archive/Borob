@@ -71,6 +71,45 @@ class MagikPlugin(BorobPlugin):
             await ctx.send(file=File(processed, filename=image.split("/")[-1]))
 
     @commands.command()
+    async def gmagik(self, ctx: commands.Context, image: str):
+        """Magik, but for creating gifs."""
+        async with ctx.channel.typing():
+            img = self.get_image(image)
+            await self.run_async(img.transform, resize="400x400>")
+            destwidth = int(img.width * 0.7)
+            destheight = int(img.height * 0.7)
+            new_image = Image()
+            frame = Image(image=img)
+            frame.format = "GIF"
+            new_image.sequence.append(frame)
+            for i in range(10):
+                await self.run_async(
+                    frame.liquid_rescale,
+                    width=destwidth,
+                    height=destheight,
+                    delta_x=1,
+                    rigidity=0,
+                )
+                await self.run_async(
+                    frame.liquid_rescale,
+                    width=int(destwidth * 1.3),
+                    height=int(destheight * 1.3),
+                    delta_x=2,
+                    rigidity=0,
+                )
+                await self.run_async(
+                    frame.transform, resize=f"{img.width}x{img.height}!"
+                )
+                last_frame = frame
+                new_image.sequence.append(frame)
+            processed = self.save_image(new_image)
+            await ctx.send(
+                file=File(
+                    processed, filename=image.split("/")[-1].split(".")[0] + ".gif"
+                )
+            )
+
+    @commands.command()
     async def sinusoid(
         self,
         ctx: commands.Context,
