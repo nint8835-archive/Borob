@@ -11,26 +11,35 @@ from discord.ext import commands
 
 from Plugin import BorobPlugin
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 IGNORED_LOGGERS = [
     "discord.client",
     "discord.gateway",
     "discord.state",
     "discord.gateway",
     "discord.http",
-    "websockets.protocol"
+    "websockets.protocol",
 ]
 
 # Configure logger and silence ignored loggers
-logging.basicConfig(format="{%(asctime)s} (%(name)s) [%(levelname)s]: %(message)s",
-                    datefmt="%x, %X",
-                    level=logging.DEBUG)
+logging.basicConfig(
+    format="{%(asctime)s} (%(name)s) [%(levelname)s]: %(message)s",
+    datefmt="%x, %X",
+    level=logging.DEBUG,
+)
 
 for logger in IGNORED_LOGGERS:
     logging.getLogger(logger).setLevel(logging.WARNING)
 
 logger = logging.getLogger("Borob")
 
-bot = commands.Bot("b!", description="An image manipulation focused discord bot.")
+bot = commands.Bot(
+    os.environ.get("BOROB_PREFIX", "b!"),
+    description="An image manipulation focused discord bot.",
+)
 
 
 @bot.event
@@ -108,18 +117,18 @@ async def plugins(ctx: commands.Context):
         embed.add_field(
             name=plugin["manifest"]["name"],
             value="{}\nVersion: {}\nAuthor: {}".format(
-                plugin['plugin'].__doc__.rstrip(),
-                plugin['manifest']['version'],
-                plugin['manifest']['author']
-            )
+                plugin["plugin"].__doc__.rstrip(),
+                plugin["manifest"]["version"],
+                plugin["manifest"]["author"],
+            ),
         )
 
     await ctx.send(embed=embed)
 
 
 loader = PluginLoader(
-    plugin_paths=("/app/plugins",),
-    plugin_class=BorobPlugin
+    plugin_paths=(os.environ.get("BOROB_PLUGIN_PATH", "/app/plugins"),),
+    plugin_class=BorobPlugin,
 )
 loader.load_manifests()
 loader.load_plugins(bot)
