@@ -98,52 +98,59 @@ class MagikPlugin(BorobPlugin):
         processed = self.save_image(img)
         await ctx.send(file=File(processed, filename=image.split("/")[-1]))
 
+    async def apply_arcweld(self, img):
+        await self.run_async(img.transform, resize="800x800>")
+
+        await self.run_async(img.evaluate, operator="leftshift", value=1, channel="red")
+
+        await self.run_async(img.contrast_stretch, black_point=0.3)
+
+        await self.run_async(
+            img.evaluate, operator="thresholdblack", value=0.9, channel="red"
+        )
+
+        await self.run_async(img.sharpen)
+
+        await self.run_async(
+            img.liquid_rescale,
+            width=int(img.width / 2),
+            height=int(img.height / 3),
+            delta_x=1,
+            rigidity=0,
+        )
+
+        await self.run_async(
+            img.liquid_rescale,
+            width=int(img.width * 2),
+            height=int(img.height * 3),
+            delta_x=0.4,
+            rigidity=0,
+        )
+
+        await self.run_async(img.implode, amount=0.2)
+
+        await self.run_async(
+            img.quantize,
+            number_colors=8,
+            colorspace_type="rgb",
+            treedepth=0,
+            dither=True,
+            measure_error=False,
+        )
+
     @commands.command()
     async def arcweld(self, ctx: commands.Context, image: str, iterations: int = 1):
         """Arc weld a given image."""
         img = self.get_image(image)
 
         for i in range(iterations):
-
-            await self.run_async(img.transform, resize="800x800>")
-
-            await self.run_async(
-                img.evaluate, operator="leftshift", value=1, channel="red"
-            )
-
-            await self.run_async(img.contrast_stretch, black_point=0.3)
-
-            await self.run_async(
-                img.evaluate, operator="thresholdblack", value=0.9, channel="red"
-            )
-
-            await self.run_async(img.sharpen)
-
-            await self.run_async(
-                img.liquid_rescale,
-                width=int(img.width / 2),
-                height=int(img.height / 3),
-                delta_x=1,
-                rigidity=0,
-            )
-
-            await self.run_async(
-                img.liquid_rescale,
-                width=int(img.width * 2),
-                height=int(img.height * 3),
-                delta_x=0.4,
-                rigidity=0,
-            )
-
-            await self.run_async(img.implode, amount=0.2)
-
-            await self.run_async(
-                img.quantize,
-                number_colors=8,
-                colorspace_type="rgb",
-                treedepth=0,
-                dither=True,
-                measure_error=False,
-            )
+            if img.sequence is not None:
+                new_img = Image()
+                for frame in img.sequence:
+                    await self.apply_arcweld(frame)
+                    new_img.sequence.append(frame)
+                img = new_img
+            else:
+                await self.apply_arcweld(img)
 
         await ctx.send(file=File(self.save_image(img), filename=image.split("/")[-1]))
