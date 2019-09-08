@@ -33,45 +33,65 @@ class MagikPlugin(BorobPlugin):
         image.close()
         processed.seek(0)
         return processed
-    
+
     async def run_async(self, function, *args, **kwargs):
         """Run a method in an asyncio executor, preventing blocking."""
-        await self.bot.loop.run_in_executor(
-            None,
-            partial(
-                function,
-                *args,
-                **kwargs
-            )
-        )
+        await self.bot.loop.run_in_executor(None, partial(function, *args, **kwargs))
 
     @commands.command()
-    async def magik(self, ctx: commands.Context, image: str, scale: float = 1, destwidth: int = None, destheight: int = None):
+    async def magik(
+        self,
+        ctx: commands.Context,
+        image: str,
+        scale: float = 1,
+        destwidth: int = None,
+        destheight: int = None,
+    ):
         """Performs a magik destruction on an image."""
         async with ctx.channel.typing():
             img = self.get_image(image)
-            await self.run_async(img.transform, resize='800x800>')
+            await self.run_async(img.transform, resize="800x800>")
             if not destwidth:
                 destwidth = int(img.width * 0.5)
             if not destheight:
                 destheight = int(img.height * 0.5)
             original_width = img.width
             original_height = img.height
-            await self.run_async(img.liquid_rescale, width=destwidth, height=destheight, delta_x=scale, rigidity=0)
-            await self.run_async(img.transform, resize=f'{original_width}x{original_height}!')
+            await self.run_async(
+                img.liquid_rescale,
+                width=destwidth,
+                height=destheight,
+                delta_x=scale,
+                rigidity=0,
+            )
+            await self.run_async(
+                img.transform, resize=f"{original_width}x{original_height}!"
+            )
             processed = self.save_image(img)
             await ctx.send(file=File(processed, filename=image.split("/")[-1]))
 
     @commands.command()
-    async def sinusoid(self, ctx: commands.Context, image: str, frequency: float = 3, phase_shift: int = 90, amplitude: float = 0.2, bias: float = 0.7):
+    async def sinusoid(
+        self,
+        ctx: commands.Context,
+        image: str,
+        frequency: float = 3,
+        phase_shift: int = 90,
+        amplitude: float = 0.2,
+        bias: float = 0.7,
+    ):
         """Run a sinusoid function on the image."""
         img = self.get_image(image)
-        await self.run_async(img.function, 'sinusoid', [frequency, phase_shift, amplitude, bias])
+        await self.run_async(
+            img.function, "sinusoid", [frequency, phase_shift, amplitude, bias]
+        )
         processed = self.save_image(img)
         await ctx.send(file=File(processed, filename=image.split("/")[-1]))
 
     @commands.command()
-    async def charcoal(self, ctx: commands.Context, image: str, radius: float = 1.5, sigma: float = 0.5):
+    async def charcoal(
+        self, ctx: commands.Context, image: str, radius: float = 1.5, sigma: float = 0.5
+    ):
         """Emulate a charcoal drawing of an image."""
         img = self.get_image(image)
         await self.run_async(img.charcoal, radius=radius, sigma=sigma)
@@ -79,48 +99,51 @@ class MagikPlugin(BorobPlugin):
         await ctx.send(file=File(processed, filename=image.split("/")[-1]))
 
     @commands.command()
-    async def arcweld(self, ctx: commands.Context, image: str):
+    async def arcweld(self, ctx: commands.Context, image: str, iterations: int = 1):
         """Arc weld a given image."""
         img = self.get_image(image)
 
-        await self.run_async(
-            img.evaluate,
-            operator="leftshift",
-            value=1,
-            channel="red"
-        )
+        for i in range(iterations):
 
-        await self.run_async(
-            img.contrast_stretch,
-            black_point=0.3
-        )
+            await self.run_async(img.transform, resize="800x800>")
 
-        await self.run_async(
-            img.evaluate,
-            operator="thresholdblack",
-            value=0.9,
-            channel="red"
-        )
+            await self.run_async(
+                img.evaluate, operator="leftshift", value=1, channel="red"
+            )
 
-        await self.run_async(
-            img.liquid_rescale,
-            width=int(img.width / 2),
-            height=int(img.height / 3),
-            delta_x=1,
-            rigidity=0
-        )
+            await self.run_async(img.contrast_stretch, black_point=0.3)
 
-        await self.run_async(
-            img.liquid_rescale,
-            width=int(img.width * 2),
-            height=int(img.height * 3),
-            delta_x=0.4,
-            rigidity=0
-        )
+            await self.run_async(
+                img.evaluate, operator="thresholdblack", value=0.9, channel="red"
+            )
 
-        await self.run_async(
-            img.implode,
-            amount=0.2
-        )
+            await self.run_async(img.sharpen)
+
+            await self.run_async(
+                img.liquid_rescale,
+                width=int(img.width / 2),
+                height=int(img.height / 3),
+                delta_x=1,
+                rigidity=0,
+            )
+
+            await self.run_async(
+                img.liquid_rescale,
+                width=int(img.width * 2),
+                height=int(img.height * 3),
+                delta_x=0.4,
+                rigidity=0,
+            )
+
+            await self.run_async(img.implode, amount=0.2)
+
+            await self.run_async(
+                img.quantize,
+                number_colors=8,
+                colorspace_type="rgb",
+                treedepth=0,
+                dither=True,
+                measure_error=False,
+            )
 
         await ctx.send(file=File(self.save_image(img), filename=image.split("/")[-1]))
