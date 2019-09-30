@@ -177,6 +177,39 @@ class MagikPlugin(BorobPlugin):
             measure_error=False,
         )
 
+    async def apply_inverse_arcweld(self, img):
+        await self.run_async(img.transform, resize="800x800>")
+
+        await self.run_async(img.implode, amount=-0.2)
+
+        await self.run_async(
+            img.liquid_rescale,
+            width=int(img.width * 2),
+            height=int(img.height * 3),
+            delta_x=0.4,
+            rigidity=0,
+        )
+
+        await self.run_async(
+            img.liquid_rescale,
+            width=int(img.width / 2),
+            height=int(img.height / 3),
+            delta_x=1,
+            rigidity=0,
+        )
+
+        await self.run_async(img.blur, sigma=1)
+
+        await self.run_async(img.contrast_stretch, white_point=0.7)
+
+        # await self.run_async(
+        #     img.evaluate, operator="thresholdblack", value=0.9, channel="red"
+        # )
+
+        await self.run_async(
+            img.evaluate, operator="rightshift", value=1, channel="red"
+        )
+
     @commands.command()
     async def arcweld(self, ctx: commands.Context, image: str, iterations: int = 1):
         """Arc weld a given image."""
@@ -187,6 +220,23 @@ class MagikPlugin(BorobPlugin):
                 new_img = Image()
                 for frame in img.sequence:
                     await self.apply_arcweld(frame)
+                    new_img.sequence.append(frame)
+                img = new_img
+            else:
+                await self.apply_arcweld(img)
+
+        await ctx.send(file=File(self.save_image(img), filename=image.split("/")[-1]))
+
+    @commands.command()
+    async def iarcweld(self, ctx: commands.Context, image: str, iterations: int = 1):
+        """Inverse Arc weld a given image."""
+        img = self.get_image(image)
+
+        for i in range(iterations):
+            if img.sequence is not None:
+                new_img = Image()
+                for frame in img.sequence:
+                    await self.apply_inverse_arcweld(frame)
                     new_img.sequence.append(frame)
                 img = new_img
             else:
