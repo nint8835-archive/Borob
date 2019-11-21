@@ -32,12 +32,13 @@ class NoNamePlugin(BorobPlugin):
     @commands.command()
     async def noname(self, ctx: commands.Context, text: str):
         with Image(height=1000, width=1000, background=Color("#fbdd00")) as image:
+            image.format = "png"
             with Drawing() as draw:
                 draw.font = os.path.join(
-                    self.manifest["path"], "fonts", "HelveticaNeue.ttf"
+                    self.manifest["path"], "fonts", "Helvetica Neu Bold.ttf"
                 )
                 draw.font_size = 72
-                draw.text(image.width / 3, image.height / 2, text)
+                draw.text(int(image.width / 3), int(image.height / 2), text)
                 draw(image)
             processed = self.save_image(image)
             await ctx.send(file=File(processed, filename="noname.png"))
