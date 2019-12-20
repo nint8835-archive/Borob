@@ -32,13 +32,14 @@ class MagikPlugin(BorobPlugin):
 
     async def get_image(self, image: str, ctx: commands.Context) -> Image:
         """Retrieve an image object from either a URL, or the first seen attachment in the last 40 messages."""
-
         if not image:
             async for message in ctx.channel.history(limit=40):
                 first_attachment = next(iter(message.attachments), None)
                 if first_attachment:
                     image = first_attachment.url
                     break
+            if not image:
+                return (None, None)
 
         resp = requests.get(image)
         img = Image(file=io.BytesIO(resp.content))
@@ -57,6 +58,8 @@ class MagikPlugin(BorobPlugin):
         """Performs a magik destruction on an image."""
         async with ctx.channel.typing():
             image, img = await self.get_image(image, ctx)
+            if not image:
+                return
             await self.run_async(img.transform, resize="800x800>")
             if not destwidth:
                 destwidth = int(img.width * 0.5)
@@ -82,6 +85,8 @@ class MagikPlugin(BorobPlugin):
         """Magik, but for creating gifs."""
         async with ctx.channel.typing():
             image, img = await self.get_image(image, ctx)
+            if not image:
+                return
             await self.run_async(img.transform, resize="400x400>")
             destwidth = int(img.width * 0.7)
             destheight = int(img.height * 0.7)
@@ -128,6 +133,8 @@ class MagikPlugin(BorobPlugin):
     ):
         """Run a sinusoid function on the image."""
         image, img = await self.get_image(image, ctx)
+        if not image:
+            return
         await self.run_async(
             img.function, "sinusoid", [frequency, phase_shift, amplitude, bias]
         )
@@ -144,6 +151,8 @@ class MagikPlugin(BorobPlugin):
     ):
         """Emulate a charcoal drawing of an image."""
         image, img = await self.get_image(image, ctx)
+        if not image:
+            return
         await self.run_async(img.charcoal, radius=radius, sigma=sigma)
         processed = self.save_image(img)
         await ctx.send(file=File(processed, filename=image.split("/")[-1]))
@@ -227,6 +236,8 @@ class MagikPlugin(BorobPlugin):
     ):
         """Arc weld a given image."""
         image, img = await self.get_image(image, ctx)
+        if not image:
+            return
 
         for i in range(iterations):
             if img.sequence is not None:
@@ -246,6 +257,8 @@ class MagikPlugin(BorobPlugin):
     ):
         """Inverse Arc weld a given image."""
         image, img = await self.get_image(image, ctx)
+        if not image:
+            return
 
         for i in range(iterations):
             if img.sequence is not None:
