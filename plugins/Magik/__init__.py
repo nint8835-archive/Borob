@@ -18,14 +18,6 @@ class MagikPlugin(BorobPlugin):
     """Manipulates and destroys images."""
 
     @staticmethod
-    def get_image(image: str) -> Image:
-        """Retrieve an image object from a URL."""
-        resp = requests.get(image)
-        img = Image(file=io.BytesIO(resp.content))
-        # img.format = image.split("/")[-1].split(".")[-1].lower()
-        return img
-
-    @staticmethod
     def save_image(image: Image) -> io.BytesIO:
         """Save an image to a file-like object."""
         processed = io.BytesIO()
@@ -38,18 +30,33 @@ class MagikPlugin(BorobPlugin):
         """Run a method in an asyncio executor, preventing blocking."""
         await self.bot.loop.run_in_executor(None, partial(function, *args, **kwargs))
 
+    async def get_image(self, image: str, ctx: commands.Context) -> Image:
+        """Retrieve an image object from either a URL, or the first seen attachment in the last 40 messages."""
+
+        if not image:
+            async for message in ctx.channel.history(limit=40):
+                first_attachment = next(iter(message.attachments), None)
+                if first_attachment:
+                    image = first_attachment.url
+                    break
+
+        resp = requests.get(image)
+        img = Image(file=io.BytesIO(resp.content))
+        # img.format = image.split("/")[-1].split(".")[-1].lower()
+        return (image, img)
+
     @commands.command()
     async def magik(
         self,
         ctx: commands.Context,
-        image: str,
+        image: str = None,
         scale: float = 1,
         destwidth: int = None,
         destheight: int = None,
     ):
         """Performs a magik destruction on an image."""
         async with ctx.channel.typing():
-            img = self.get_image(image)
+            image, img = await self.get_image(image, ctx)
             await self.run_async(img.transform, resize="800x800>")
             if not destwidth:
                 destwidth = int(img.width * 0.5)
@@ -71,10 +78,10 @@ class MagikPlugin(BorobPlugin):
             await ctx.send(file=File(processed, filename=image.split("/")[-1]))
 
     @commands.command()
-    async def gmagik(self, ctx: commands.Context, image: str):
+    async def gmagik(self, ctx: commands.Context, image: str = None):
         """Magik, but for creating gifs."""
         async with ctx.channel.typing():
-            img = self.get_image(image)
+            image, img = await self.get_image(image, ctx)
             await self.run_async(img.transform, resize="400x400>")
             destwidth = int(img.width * 0.7)
             destheight = int(img.height * 0.7)
@@ -120,7 +127,7 @@ class MagikPlugin(BorobPlugin):
         bias: float = 0.7,
     ):
         """Run a sinusoid function on the image."""
-        img = self.get_image(image)
+        image, img = await self.get_image(image, ctx)
         await self.run_async(
             img.function, "sinusoid", [frequency, phase_shift, amplitude, bias]
         )
@@ -129,10 +136,14 @@ class MagikPlugin(BorobPlugin):
 
     @commands.command()
     async def charcoal(
-        self, ctx: commands.Context, image: str, radius: float = 1.5, sigma: float = 0.5
+        self,
+        ctx: commands.Context,
+        image: str = None,
+        radius: float = 1.5,
+        sigma: float = 0.5,
     ):
         """Emulate a charcoal drawing of an image."""
-        img = self.get_image(image)
+        image, img = await self.get_image(image, ctx)
         await self.run_async(img.charcoal, radius=radius, sigma=sigma)
         processed = self.save_image(img)
         await ctx.send(file=File(processed, filename=image.split("/")[-1]))
@@ -211,9 +222,11 @@ class MagikPlugin(BorobPlugin):
         )
 
     @commands.command()
-    async def arcweld(self, ctx: commands.Context, image: str, iterations: int = 1):
+    async def arcweld(
+        self, ctx: commands.Context, image: str = None, iterations: int = 1
+    ):
         """Arc weld a given image."""
-        img = self.get_image(image)
+        image, img = await self.get_image(image, ctx)
 
         for i in range(iterations):
             if img.sequence is not None:
@@ -228,9 +241,11 @@ class MagikPlugin(BorobPlugin):
         await ctx.send(file=File(self.save_image(img), filename=image.split("/")[-1]))
 
     @commands.command()
-    async def iarcweld(self, ctx: commands.Context, image: str, iterations: int = 1):
+    async def iarcweld(
+        self, ctx: commands.Context, image: str = None, iterations: int = 1
+    ):
         """Inverse Arc weld a given image."""
-        img = self.get_image(image)
+        image, img = await self.get_image(image, ctx)
 
         for i in range(iterations):
             if img.sequence is not None:
