@@ -132,14 +132,15 @@ class MagikPlugin(BorobPlugin):
         bias: float = 0.7,
     ):
         """Run a sinusoid function on the image."""
-        image, img = await self.get_image(image, ctx)
-        if not image:
-            return
-        await self.run_async(
-            img.function, "sinusoid", [frequency, phase_shift, amplitude, bias]
-        )
-        processed = self.save_image(img)
-        await ctx.send(file=File(processed, filename=image.split("/")[-1]))
+        async with ctx.channel.typing():
+            image, img = await self.get_image(image, ctx)
+            if not image:
+                return
+            await self.run_async(
+                img.function, "sinusoid", [frequency, phase_shift, amplitude, bias]
+            )
+            processed = self.save_image(img)
+            await ctx.send(file=File(processed, filename=image.split("/")[-1]))
 
     @commands.command()
     async def charcoal(
@@ -150,12 +151,13 @@ class MagikPlugin(BorobPlugin):
         sigma: float = 0.5,
     ):
         """Emulate a charcoal drawing of an image."""
-        image, img = await self.get_image(image, ctx)
-        if not image:
-            return
-        await self.run_async(img.charcoal, radius=radius, sigma=sigma)
-        processed = self.save_image(img)
-        await ctx.send(file=File(processed, filename=image.split("/")[-1]))
+        async with ctx.channel.typing():
+            image, img = await self.get_image(image, ctx)
+            if not image:
+                return
+            await self.run_async(img.charcoal, radius=radius, sigma=sigma)
+            processed = self.save_image(img)
+            await ctx.send(file=File(processed, filename=image.split("/")[-1]))
 
     async def apply_arcweld(self, img):
         await self.run_async(img.transform, resize="800x800>")
@@ -235,39 +237,41 @@ class MagikPlugin(BorobPlugin):
         self, ctx: commands.Context, image: str = None, iterations: int = 1
     ):
         """Arc weld a given image."""
-        image, img = await self.get_image(image, ctx)
-        if not image:
-            return
+        async with ctx.channel.typing():
+            image, img = await self.get_image(image, ctx)
+            if not image:
+                return
 
-        for i in range(iterations):
-            if img.sequence is not None:
-                new_img = Image()
-                for frame in img.sequence:
-                    await self.apply_arcweld(frame)
-                    new_img.sequence.append(frame)
-                img = new_img
-            else:
-                await self.apply_arcweld(img)
+            for i in range(iterations):
+                if img.sequence is not None:
+                    new_img = Image()
+                    for frame in img.sequence:
+                        await self.apply_arcweld(frame)
+                        new_img.sequence.append(frame)
+                    img = new_img
+                else:
+                    await self.apply_arcweld(img)
 
-        await ctx.send(file=File(self.save_image(img), filename=image.split("/")[-1]))
+            await ctx.send(file=File(self.save_image(img), filename=image.split("/")[-1]))
 
     @commands.command()
     async def iarcweld(
         self, ctx: commands.Context, image: str = None, iterations: int = 1
     ):
         """Inverse Arc weld a given image."""
-        image, img = await self.get_image(image, ctx)
-        if not image:
-            return
+        async with ctx.channel.typing():
+            image, img = await self.get_image(image, ctx)
+            if not image:
+                return
 
-        for i in range(iterations):
-            if img.sequence is not None:
-                new_img = Image()
-                for frame in img.sequence:
-                    await self.apply_inverse_arcweld(frame)
-                    new_img.sequence.append(frame)
-                img = new_img
-            else:
-                await self.apply_arcweld(img)
+            for i in range(iterations):
+                if img.sequence is not None:
+                    new_img = Image()
+                    for frame in img.sequence:
+                        await self.apply_inverse_arcweld(frame)
+                        new_img.sequence.append(frame)
+                    img = new_img
+                else:
+                    await self.apply_arcweld(img)
 
-        await ctx.send(file=File(self.save_image(img), filename=image.split("/")[-1]))
+            await ctx.send(file=File(self.save_image(img), filename=image.split("/")[-1]))
